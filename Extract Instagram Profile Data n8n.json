@@ -1,0 +1,452 @@
+{
+  "name": "Extract Instagram Profile Data n8n",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * *"
+            }
+          ]
+        }
+      },
+      "id": "48375e22-3bdc-4187-8a4a-b1f24148249c",
+      "name": "Daily 10 AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1616,
+        880
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "viralNews",
+        "options": {}
+      },
+      "id": "43991def-62c4-403a-b0a0-177ef169c4ed",
+      "name": "Aggregate News Data",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "competitorPosts",
+        "options": {}
+      },
+      "id": "ac426f58-4e6b-4aa5-987b-a4f46a94fc76",
+      "name": "Aggregate Competitor Data",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "viralNews",
+              "field2": "competitorPosts"
+            }
+          ]
+        },
+        "joinMode": "keepEverything",
+        "options": {}
+      },
+      "id": "74f187ee-7571-419a-8be0-dcad8020dfa0",
+      "name": "Merge All Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        704
+      ],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        704
+      ],
+      "id": "b24e3a0d-34f1-4c5c-a4d8-340bfb62c19c",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {},
+      "id": "2f0d0240-3a04-4c60-841d-cd37a7b608a9",
+      "name": "Limit articles",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apify.com/v2/actor-tasks/MQ9wsJzewRIAWb73H/run-sync-get-dataset-items?token=apify_api_YWWHKkdDPa5ZCbCfODmZSDXO7wxVua3iAeKh",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n\"usernames\":[\n\"{{ $json['Instagram Handle'].replace(/^@/, \"\") }}\"\n],\n\"resultsLimit\":1\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -928,
+        800
+      ],
+      "id": "664ad29c-0c08-4928-a405-ac72d047f932",
+      "name": "Scrape Instagram Profile via Apify"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7553b9c2-c9df-4319-927e-6cff7f9e8067",
+              "name": "username",
+              "value": "={{ $json.ownerUsername }}",
+              "type": "string"
+            },
+            {
+              "id": "a9178377-8eeb-4b77-bf66-d518165f9f8a",
+              "name": "fullName",
+              "value": "={{ $json.ownerFullName }}",
+              "type": "string"
+            },
+            {
+              "id": "0fb36ccc-a82b-4cf9-a56e-a88bef01c088",
+              "name": "caption",
+              "value": "={{ $json.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "47eb07e0-80d8-499a-bc1f-84eee97e7e9f",
+              "name": "video view count",
+              "value": "={{ $json.videoViewCount }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -704,
+        800
+      ],
+      "id": "c554f871-be42-48ae-ab83-a7c1ebd7aa64",
+      "name": "Format Instagram Profile Data"
+    },
+    {
+      "parameters": {},
+      "id": "51a05397-f0ba-4241-b473-e67e50e46abc",
+      "name": "Limit profiles",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -1152,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Based on the following information, generate EXACTLY 3 Instagram Reel content ideas with complete scripts (30-40 seconds each):\n\nVIRAL NEWS (use for 1 idea):\n{{ $json.viral_news }}\nCOMPETITOR POSTS (analyze for 1 idea):\n{{ $json.competitors }}\n{{ $json.persona }}\n\nOUTPUT REQUIREMENTS:\nGenerate 2 ideas in the following JSON array format:\n[\n  {\n    \"type\": \"news\",\n    \"title\": \"Catchy Title\",\n    \"hook\": \"First 3 seconds script\",\n    \"script\": \"Complete 30-40 second reel script with timing cues\",\n    \"cta\": \"Call to action\",\n    \"hashtags\": \"#relevant #hashtags\"\n  }\n]\n\nDISTRIBUTION:\n- 1 ideas based on viral news (type: \"news\")\n- 1 ideas inspired by competitor posts (type: \"competitor\")\n- 1 unique ideas based on full knowledge till now (type: \"unique\")\n\nEach script should:\n- Start with a strong hook (0-3 sec)\n- Have clear visual suggestions\n- Include text overlay suggestions\n- Be 30-40 seconds when read aloud\n- End with a clear CTA\n- Include 5-8 relevant hashtags\n\nReturn ONLY the JSON array, no additional text."
+            },
+            {
+              "content": "=You are an expert Instagram content strategist and viral reel scriptwriter who crafts scroll-stopping short-form content for personal brands. You specialize in storytelling, hooks, timing, and trend adaptation, ensuring each reel performs strongly with the algorithm.\n\nYour job:\nGenerate 3 viral Instagram Reel content ideas (each with a 30–40 second conversational script) based on the provided news, competitor posts, and brand persona data.\n\n---\n\nINPUT DATA\nVIRAL NEWS (for 1 ideas):\n{{ $json.viralNews }}\n\nCOMPETITOR POSTS (for 1 ideas):\n{{ $json.competitorPosts }}\n\nBRAND PERSONA:\n{{ $json.brandPersona }}\n\n---\n\nOUTPUT REQUIREMENTS\nReturn output only as a valid JSON array (no explanations, no text outside the array).\n\nEach array item must follow this exact structure:\n\n[\n  {\n    \"type\": \"news\" | \"competitor\" | \"unique\",\n    \"title\": \"Catchy, emotional, or curiosity-driven title for the reel\",\n    \"hook\": \"0–3 sec — high-impact hook that instantly grabs attention\",\n    \"script\": \"Full conversational 30–40 sec script with suggested timing cues (e.g., [0-3s Hook], [4-10s Story setup], [11-30s Build-up], [31-40s CTA or twist]). Include brief visual and text overlay suggestions inline.\",\n    \"cta\": \"Engaging call to action (e.g., 'Save this reel', 'Share with a friend', 'Comment your thoughts below')\",\n    \"hashtags\": \"#trending #personalbranding #reels #growth #inspiration\"\n  }\n]\n\n---\n\nDISTRIBUTION\n- 1 ideas based on viral news (type: \"news\")\n- 1 ideas based on competitor posts (type: \"competitor\")\n- 1 ideas based on brand persona insights (type: \"unique\")\n\n---\n\nCREATIVE GUIDELINES\n- Hooks must be pattern interrupts: curiosity, controversy, or emotional triggers.\n- Scripts must sound natural, spoken, and human — not formal writing.\n- Include visual cue suggestions (e.g., \"Show news headline on screen,\" \"Cut to reaction,\" \"Overlay trending sound\").\n- Keep tone authentic, informative, and engaging — like a creator speaking directly to their audience.\n- Maintain 30–40 seconds of pacing when read aloud.\n- Avoid generic fluff — every line should build intrigue or deliver value.\n\n---\n\nOUTPUT EXAMPLE\n[\n  {\n    \"type\": \"news\",\n    \"title\": \"Parents Warned: Dangerous Baby Product Pulled!\",\n    \"hook\": \"Parents, this might shock you.\",\n    \"script\": \"[0-3s Hook] 'Parents, this might shock you.'\\n[4-10s Setup] 'A new safety alert just dropped about baby self-feeding gadgets — and it’s serious.'\\n[11-25s Story] 'Authorities are urging parents to stop using these products immediately after reports of choking risks.'\\n[26-35s Value] 'If you’ve bought one recently, check the product name and stop using it right now.'\\n[36-40s CTA] 'Share this with another parent — you could literally save a life.'\",\n    \"cta\": \"Share this reel to spread awareness.\",\n    \"hashtags\": \"#ParentAlert #BabySafety #ViralNews #StayInformed #ParentTips\"\n  }\n]\n\n---\n\nINSTRUCTIONS\n- Return exactly 3 ideas in total, formatted as a single valid JSON array.\n- No markdown, no prose, no explanations — only the array.\n",
+              "role": "model"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.6
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        192,
+        704
+      ],
+      "id": "200260de-d9c0-458c-b4b0-7cf5072ad12e",
+      "name": "Message a model",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dNuWN9OAWB2sD87V",
+          "name": "freedom ai"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all input items\nconst items = $input.all();\n\n// Get full persona details from 'Limit profiles' node\nconst personaData = $('Limit profiles').first().json;\n\n// Format persona details nicely\nconst persona = `\nPersona Details:\nName: ${personaData.Name || 'N/A'}\nHandle: ${personaData['Instagram Handle'] || 'N/A'}\nFollowers: ${personaData.Followers || 'N/A'}\nLocation: ${personaData.Location || 'N/A'}\nKey Content Focus: ${personaData['Key Content Focus'] || 'N/A'}\nProfile: ${personaData['Instagram URL'] || 'N/A'}\n`.trim();\n\n// Initialize arrays\nlet viralNewsArr = [];\nlet competitorPostsArr = [];\n\n// Loop through each item and sort data\nfor (const item of items) {\n  const data = item.json;\n\n  // Extract viral news data\n  if (data.viralNews) {\n    data.viralNews.forEach((news, index) => {\n      viralNewsArr.push(`title ${index + 1}: ${news.title}`);\n    });\n  }\n\n  // Extract competitor post data\n  if (data.competitorPosts) {\n    data.competitorPosts.forEach((post, index) => {\n      competitorPostsArr.push(\n        `post ${index + 1}: username: ${post.username}, video caption and idea: ${post.caption}`\n      );\n    });\n  }\n}\n\n// Prepare final output\nconst output = {\n  persona: persona,\n  viral_news: viralNewsArr.join(\"\\n\"),\n  competitors: competitorPostsArr.join(\"\\n\"),\n};\n\n// Return as single JSON object\nreturn [\n  {\n    json: output,\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        704
+      ],
+      "id": "feaacbc2-89ce-4144-922a-963ac934850d",
+      "name": "data formatter"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $json.content.parts[1].text;\nconst ideas = JSON.parse(rawText.replace(/```json|```/g, '').trim());\nreturn ideas.map(i => ({ json: i }));\n"
+      },
+      "id": "c2ddfcff-4b0d-4016-b606-c767e0c20ab6",
+      "name": "final ideas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1cXZ8dMXpGGNF_zokMMOEcrciPz2LjCcZ3Dud0JWwF-I/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "persona",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1cXZ8dMXpGGNF_zokMMOEcrciPz2LjCcZ3Dud0JWwF-I/edit#gid=0"
+        },
+        "combineFilters": "OR",
+        "options": {
+          "outputFormatting": {
+            "values": {
+              "general": "FORMATTED_VALUE",
+              "date": "FORMATTED_STRING"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1376,
+        704
+      ],
+      "id": "0dc8c6ad-ac8f-4200-8b40-888a93f66ebc",
+      "name": "Get competitors",
+      "retryOnFail": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BHSTnEZc5pItYTbf",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://news.google.com/rss/search?q={{ $json['Key Content Focus'] }}&hl=en-US&gl=US&ceid=US:en",
+        "options": {}
+      },
+      "id": "e2648ea0-85d3-479d-b488-2a64f6e3bc72",
+      "name": "Fetch News RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        592
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 10 AM Trigger": {
+      "main": [
+        []
+      ]
+    },
+    "Aggregate News Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Competitor Data": {
+      "main": [
+        [
+          {
+            "node": "Merge All Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Data": {
+      "main": [
+        [
+          {
+            "node": "data formatter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit articles": {
+      "main": [
+        [
+          {
+            "node": "Aggregate News Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Instagram Profile via Apify": {
+      "main": [
+        [
+          {
+            "node": "Format Instagram Profile Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Instagram Profile Data": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Competitor Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit profiles": {
+      "main": [
+        [
+          {
+            "node": "Scrape Instagram Profile via Apify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "final ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "data formatter": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "final ideas": {
+      "main": [
+        []
+      ]
+    },
+    "Get competitors": {
+      "main": [
+        [
+          {
+            "node": "Fetch News RSS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Limit profiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch News RSS": {
+      "main": [
+        [
+          {
+            "node": "Limit articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "eab8a565-1837-4f91-b53d-d9f0dbcc67d6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6e07bc14474ec26ce530c113423d56c0234f61c50231ab55e1dcfa86c92550a7"
+  },
+  "id": "EG8DapG1pFDiG1W0",
+  "tags": []
+}
