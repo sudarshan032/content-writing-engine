@@ -101,7 +101,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://api.apify.com/v2/actor-tasks/MQ9wsJzewRIAWb73H/run-sync-get-dataset-items?token=apify_api_YWWHKkdDPa5ZCbCfODmZSDXO7wxVua3iAeKh",
+        "url": "=https://api.apify.com/v2/actor-tasks/MQ9wsJzewRIAWb73H/run-sync-get-dataset-items?token=apify_api_",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n\"usernames\":[\n\"{{ $json['Instagram Handle'].replace(/^@/, \"\") }}\"\n],\n\"resultsLimit\":1\n}",
