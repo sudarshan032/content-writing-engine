@@ -52,11 +52,11 @@ Stored in Google Sheet (example):
 - google news
 - RSS news
 
-###Response
+### Response
 
 <img width="585" height="513" alt="Screenshot 2025-10-25 162334" src="https://github.com/user-attachments/assets/2a8907a0-c932-4de7-adcb-61f4d042e1c9" />
 
 
-###Resources
+### Resources
 [N8N docs](https://docs.n8n.io/)
 [Apify](https://apify.com/)
